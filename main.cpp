@@ -16,12 +16,15 @@ HANDLE retrieveProcessId(char *processName) {
     return hProcess;
 }
 
-int main() {
-    char* dllPath = (char*) "No.Ankama.dll";
-    char* processName = (char*) "adl.exe";
+int main(int argc, char *argv[]) {
+    if(argc < 3) {
+        std::cout << "Missing arguments for injector.\n";
+        return 0;
+    }
 
+    char* dllPath = argv[1];
+    char* processName = argv[2];
     void* pLoadLibrary = (void*)GetProcAddress(GetModuleHandle("kernel32"),"LoadLibraryA");
-
     HANDLE hProcess = NULL;
     STARTUPINFOA startupInfo;
     ZeroMemory(&startupInfo,sizeof(startupInfo));
@@ -32,20 +35,20 @@ int main() {
         return 0;
     }
 
-    std::cout << "Allocating virtual memory ...\n";
+    std::cout << "Allocating virtual memory...\n";
     void* pReservedSpace = VirtualAllocEx(hProcess,NULL,strlen(dllPath),MEM_COMMIT,PAGE_EXECUTE_READWRITE);
     if(!pReservedSpace) {
         std::cout << "Could not allocate virtual memory. GetLastError() = " << GetLastError();
         return 0;
     }
 
-    std::cout << "Writing process memory ...\n";
+    std::cout << "Writing process memory...\n";
     if(!WriteProcessMemory(hProcess,pReservedSpace,dllPath,strlen(dllPath),NULL)) {
         std::cout << "Error while calling WriteProcessMemory(). GetLastError() = " << GetLastError();
         return 0;
     }
 
-    std::cout << "Creating remote thread ...\n";
+    std::cout << "Creating remote thread...\n";
     HANDLE hThread = CreateRemoteThread(hProcess,NULL,0,(LPTHREAD_START_ROUTINE)pLoadLibrary,pReservedSpace,0,NULL);
     if(!hThread) {
         std::cout << "Unable to create the remote thread. GetLastError() = " << GetLastError();
