@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdio>
 #include <tlhelp32.h>
+#include <unistd.h>
 
 HANDLE retrieveProcessId(char *processName) {
     HANDLE hProcess = NULL;
@@ -22,7 +23,18 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    char* dllPath = argv[1];
+    char dllPath[1024];
+    if(getcwd(dllPath, sizeof(dllPath)) == NULL)
+       std::cout << "Impossible to retrieve the current working directory.\n";
+
+    char* dllName = argv[1];
+    strcat(dllPath, "\\");
+    strcat(dllPath, dllName);
+    if(access(dllName, F_OK) == -1) {
+        std::cout << "DLL not found.\n";
+        return 0;
+    }
+
     char* processName = argv[2];
     void* pLoadLibrary = (void*)GetProcAddress(GetModuleHandle("kernel32"),"LoadLibraryA");
     HANDLE hProcess = NULL;
